@@ -510,6 +510,41 @@ __global__ void kernel_mlp_fused(const Activation output_activation, const __hal
 	// 	assert(out_intermediate);
 	// }
 
+	// add by huweim
+	if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0 && blockIdx.y == 0){
+		uint32_t weight_matrix_height = in_width;
+		uint32_t weight_matrix_width = WIDTH;
+		printf("weight_matrix_height:%d weight_matrix_width:%d n_hidden_matmuls: %d \n", weight_matrix_height, weight_matrix_width, n_hidden_matmuls);
+		uint32_t global_weight_index = 0;
+		// first layer
+		printf("first layer, weight height:%d width:%d \n", weight_matrix_height, weight_matrix_width);
+		for (uint32_t index = 0; index < weight_matrix_height * weight_matrix_width; index++){
+			float print_data = (float)__half2float(weights[index]);
+			printf("%f\n", print_data);
+		}
+		// hidden layer
+		global_weight_index = weight_matrix_height * weight_matrix_width;
+		for(uint32_t m_hidden_layer; m_hidden_layer < n_hidden_matmuls; m_hidden_layer){
+			printf("hidden layer %d/%d\n", m_hidden_layer, n_hidden_matmuls);	
+			uint32_t start_index = m_hidden_layer * WIDTH * WIDTH;
+			uint32_t end_index = (m_hidden_layer + 1) * WIDTH * WIDTH;
+			for(uint32_t index = global_weight_index + start_index; index < global_weight_index + end_index; index++){
+				float print_data = (float)__half2float(weights[index]);
+				printf("%f\n", print_data);
+			}
+		}
+		global_weight_index += n_hidden_matmuls * WIDTH * WIDTH;
+
+		//last layer
+		printf("last layer \n");
+		for(uint32_t index = global_weight_index; index < global_weight_index + WIDTH; index++){
+			float print_data = (float)__half2float(weights[index]);
+			printf("%f\n", print_data);
+		}
+
+		global_weight_index += WIDTH;
+	}
+
 	// Shared memory contains the intermediate activations of blockDim.y*16 elements.
 	// In some cases, it also contains the weight matrix for the first and last layer.
 	extern __shared__ __half shmem[];

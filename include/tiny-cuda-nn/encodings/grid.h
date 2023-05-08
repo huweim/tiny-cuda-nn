@@ -233,6 +233,26 @@ __global__ void kernel_grid(
 	T* __restrict__ encoded_positions,
 	float* __restrict__ dy_dx
 ) {
+
+	// add by huweim
+	if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0 && blockIdx.y == 0){
+		printf("num_grid_features:%d N_FEATURES_PER_LEVEL:%d total hash values:%d \n", num_grid_features, N_FEATURES_PER_LEVEL, offset_table.data[offset_table.size - 1] * N_FEATURES_PER_LEVEL);
+
+		/* offset_table.size is the number of levels + 1 */
+		for (uint32_t m_level = 0; m_level < offset_table.size - 1; m_level++){
+			const uint32_t hash_nums_current_level = offset_table.data[m_level+1] - offset_table.data[m_level];
+			printf("level %d hash value nums:%d\n", m_level, hash_nums_current_level * N_FEATURES_PER_LEVEL);
+			/* Each level contains N_FEATURES_PER_LEVEL features */
+			/* Calculate the global index */
+			for (uint32_t index = offset_table.data[m_level] * N_FEATURES_PER_LEVEL; index < offset_table.data[m_level+1] * N_FEATURES_PER_LEVEL; index++){
+				// printf("index:%d value:%f\n", index, float(grid[index]));
+				printf("%f\n", float(grid[index]));
+			}
+		}
+		/* error test, the value should be 0 */
+		// const uint32_t err_test_index = offset_table.data[offset_table.size - 1] * N_FEATURES_PER_LEVEL;
+		// printf("error test, index:%d value:%f\n", err_test_index, float(grid[err_test_index]));
+	}
 	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 	if (i >= num_elements) return;
 

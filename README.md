@@ -14,7 +14,7 @@ Develop the MLP forward and grid forward to output the value of weights and grid
 ```shell
 pip install tinycudann
 ```
-# Getting Start
+# Getting Started
 ## Compile
 
 ```shell
@@ -25,6 +25,20 @@ python setup.py install
 cp bindings/torch/build/lib.linux-x86_64-cpython-39/tinycudann_bindings/_75_C.cpython-39-x86_64-linux-gnu.so ~/anaconda3/envs/YOUR_ENV_NAME/lib/python3.9/site-packages/tinycudann_bindings
 
 ```
+
+## Run
+
+
+Run your TCNN project and post-process.
+
+```shell
+python train.py > input.txt
+python post_process.py --print_iteration_num=1
+```
+
+`post_process.py` will create a directory named `txt`.
+By default only the data of the first iteration in the file is written to file, this parameter can be set by `print_iteration_num`.
+After post-processing, the files for each level of the hash table is generated, as well as the files for each level of the weights.
 
 # Modification in this project
 

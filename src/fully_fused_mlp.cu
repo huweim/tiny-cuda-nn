@@ -509,7 +509,7 @@ __global__ void kernel_mlp_fused(const Activation output_activation, const __hal
 	// } else {
 	// 	assert(out_intermediate);
 	// }
-
+	
 	// add by huweim
 	if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0 && blockIdx.y == 0){
 		uint32_t weight_matrix_height = in_width;
@@ -524,8 +524,8 @@ __global__ void kernel_mlp_fused(const Activation output_activation, const __hal
 		}
 		// hidden layer
 		global_weight_index = weight_matrix_height * weight_matrix_width;
-		for(uint32_t m_hidden_layer; m_hidden_layer < n_hidden_matmuls; m_hidden_layer){
-			printf("hidden layer %d/%d\n", m_hidden_layer, n_hidden_matmuls);	
+		for(uint32_t m_hidden_layer = 0; m_hidden_layer < n_hidden_matmuls; m_hidden_layer++){
+			printf("hidden layer %d/%d\n", m_hidden_layer + 1, n_hidden_matmuls);	
 			uint32_t start_index = m_hidden_layer * WIDTH * WIDTH;
 			uint32_t end_index = (m_hidden_layer + 1) * WIDTH * WIDTH;
 			for(uint32_t index = global_weight_index + start_index; index < global_weight_index + end_index; index++){
@@ -543,7 +543,21 @@ __global__ void kernel_mlp_fused(const Activation output_activation, const __hal
 		}
 
 		global_weight_index += WIDTH;
+		/* error test*/
+		// float err_print_data = (float)__half2float(weights[global_weight_index]);
+		// printf("error test, index %d value: %f\n", global_weight_index, err_print_data);
+
+		// init version 
+		// for (uint32_t m_layer = 0; m_layer < n_hidden_matmuls; m_layer++){
+		// 	printf("hidden layer %d/%d\n", m_layer, n_hidden_matmuls);
+		// 	for(uint32_t i = weight_matrix_height * weight_matrix_width * m_layer; i < weight_matrix_height * weight_matrix_width * (m_layer + 1) + weight_matrix_width * 1; i++){
+		// 		float print_data = (float)__half2float(weights[i]);
+		// 		printf("index %d value: %f\n", i, print_data);
+		// 	}
+		// }
+
 	}
+
 
 	// Shared memory contains the intermediate activations of blockDim.y*16 elements.
 	// In some cases, it also contains the weight matrix for the first and last layer.
@@ -648,6 +662,13 @@ std::enable_if_t<std::is_same<__half, T>::value> mlp_fused_forward(
 	}
 
 	const dim3 blocks = { n_blocks, 1u, 1u };
+
+	// std::cout << weights.rows() << " " << weights.cols() << "weight" << std::endl;
+	// for(uint32_t i = 0; i < in_width * WIDTH; i++){
+	// 	const __half* __restrict__ weights_ptr = weights.data();
+	// 	float print_data = (float)__half2float(weights_ptr[i]);
+	// 	printf("data %f\n", print_data);
+	// }
 
 	check_shmem_error(cudaFuncSetAttribute(kernel_mlp_fused<WIDTH, N_ITERS, __half, ACTIVATION, INFERENCE>, cudaFuncAttributeMaxDynamicSharedMemorySize, (int)shmem_size));
 	kernel_mlp_fused<WIDTH, N_ITERS, __half, ACTIVATION, INFERENCE><<<blocks, threads, shmem_size, stream>>>(
